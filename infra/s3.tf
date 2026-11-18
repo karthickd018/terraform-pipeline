@@ -5,9 +5,9 @@ data "aws_caller_identity" "current" {}
 module "app_bucket" {
   source = "./modules/s3-bucket"
 
-  bucket_name = "myproj-app-data-${data.aws_caller_identity.current.account_id}" # EDIT "myproj" to local.project
+  bucket_name = "myproj-app-data-new" # EDIT "myproj" to local.project
 
   tags = {
-    Environment = "development"
+    Environment = "chaging"
   }
 }
