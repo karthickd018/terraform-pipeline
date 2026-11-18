@@ -144,7 +144,7 @@ resource "aws_codepipeline" "this" {
   variable {
     name          = "TF_TARGETS"
     default_value = "none"
-    description   = "Required. Comma-separated Terraform addresses to plan and apply, for example module.app_bucket"
+    description   = "Optional. Leave none/empty for a full plan. Or set targets, for example module.app_bucket"
   }
 
   stage {

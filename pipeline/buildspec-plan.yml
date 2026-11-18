@@ -18,20 +18,20 @@ phases:
       - cd infra
       - terraform init -input=false
       - |
-        # Targeted runs only: an empty TF_TARGETS or "none" stops here.
-        if [ -z "$TF_TARGETS" ] || [ "$TF_TARGETS" = "none" ]; then
-          echo "TF_TARGETS is empty. This pipeline only runs targeted plans."
-          echo "Release change again and set TF_TARGETS, for example: module.app_bucket"
-          exit 1
-        fi
+        # Empty / "none" = full plan. Any other value = targeted plan (-target).
         TARGET_ARGS=()
-        IFS=',' read -ra ADDRS <<< "$TF_TARGETS"
-        for addr in "${ADDRS[@]}"; do
-          addr="$(echo "$addr" | tr -d ' ')"
-          echo "$addr" | grep -Eq '^[a-z][][A-Za-z0-9_."-]*$' || { echo "Invalid target address: $addr"; exit 1; }
-          TARGET_ARGS+=("-target=$addr")
-        done
-        echo "Targeted plan: $TF_TARGETS"
+        if [ -n "$TF_TARGETS" ] && [ "$TF_TARGETS" != "none" ]; then
+          IFS=',' read -ra ADDRS <<< "$TF_TARGETS"
+          for addr in "${ADDRS[@]}"; do
+            addr="$(echo "$addr" | tr -d ' ')"
+            [ -z "$addr" ] && continue
+            echo "$addr" | grep -Eq '^[a-z][][A-Za-z0-9_."-]*$' || { echo "Invalid target address: $addr"; exit 1; }
+            TARGET_ARGS+=("-target=$addr")
+          done
+          echo "Targeted plan: $TF_TARGETS"
+        else
+          echo "Full plan (no TF_TARGETS)"
+        fi
         terraform plan -input=false -detailed-exitcode -out=tfplan "${TARGET_ARGS[@]}" || [ $? -eq 2 ]
 
 artifacts:
