@@ -1,0 +1,44 @@
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    TF_IN_AUTOMATION: "true"
+  exported-variables:
+    - CODEBUILD_BUILD_ID # the Approve stage uses it to link to this build's log
+
+phases:
+  install:
+    commands:
+      - curl -fsSLo tf.zip https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_arm64.zip
+      - unzip -q -o tf.zip -d /usr/local/bin
+      - terraform version
+  build:
+    commands:
+      - cd infra
+      - terraform init -input=false
+      - |
+        # Targeted runs only: an empty TF_TARGETS or "none" stops here.
+        if [ -z "$TF_TARGETS" ] || [ "$TF_TARGETS" = "none" ]; then
+          echo "TF_TARGETS is empty. This pipeline only runs targeted plans."
+          echo "Release change again and set TF_TARGETS, for example: module.app_bucket"
+          exit 1
+        fi
+        TARGET_ARGS=()
+        IFS=',' read -ra ADDRS <<< "$TF_TARGETS"
+        for addr in "${ADDRS[@]}"; do
+          addr="$(echo "$addr" | tr -d ' ')"
+          echo "$addr" | grep -Eq '^[a-z][][A-Za-z0-9_."-]*$' || { echo "Invalid target address: $addr"; exit 1; }
+          TARGET_ARGS+=("-target=$addr")
+        done
+        echo "Targeted plan: $TF_TARGETS"
+        terraform plan -input=false -detailed-exitcode -out=tfplan "${TARGET_ARGS[@]}" || [ $? -eq 2 ]
+
+artifacts:
+  base-directory: infra
+  files:
+    - tfplan
+    - .terraform.lock.hcl
+    # If a module builds a file during the plan (for example a Lambda zip made by data.archive_file),
+    # the Apply stage runs in a fresh build and will not have it. Add that file here and copy it back
+    # in buildspec-apply.yml.

@@ -1,0 +1,20 @@
+version: 0.2
+
+env:
+  variables:
+    TF_IN_AUTOMATION: "true"
+
+phases:
+  install:
+    commands:
+      - curl -fsSLo tf.zip https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_arm64.zip
+      - unzip -q -o tf.zip -d /usr/local/bin
+      - terraform version
+  build:
+    commands:
+      # The exact plan that a person approved, made by the Plan stage.
+      - cp $CODEBUILD_SRC_DIR_PlanArtifact/tfplan infra/tfplan
+      - cp $CODEBUILD_SRC_DIR_PlanArtifact/.terraform.lock.hcl infra/.terraform.lock.hcl
+      - cd infra
+      - terraform init -input=false
+      - terraform apply -input=false tfplan
