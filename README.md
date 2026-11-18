@@ -10,8 +10,8 @@ code        of the    says yes    change
             change
 ```
 
-**Targeted apply only.** Every run must name what to change (`TF_TARGETS`). A plan with no target stops with an error.
-There is no push trigger: a run is started by hand with **Release change**.
+**Full or targeted apply.** Leave `TF_TARGETS` as `none`/empty for a full plan, or set addresses (for example `module.app_bucket`) for a targeted plan.
+A push to the watched branch starts the pipeline automatically (full plan via default `TF_TARGETS`). You can still use **Release change** by hand and optionally set targets.
 
 ## What is in this folder
 
@@ -67,18 +67,18 @@ Console, then **Developer Tools**, then **Settings**, then **Connections**. Open
 
 ## How to make a change (every time)
 
-1. Change the files in `infra/` and push them to the branch.
-2. Console, then **CodePipeline**, then `<project>_terraform_pipeline`, then **Release change**.
-3. Set the variable `TF_TARGETS` to what you want to change, for example:
+1. Change the files in `infra/` and push them to the branch. The pipeline starts on its own (full plan).
+2. Optional: Console → **CodePipeline** → `<project>_terraform_pipeline` → **Release change**, and set `TF_TARGETS`:
+   - leave `none` / empty → full plan of everything in `infra/`
    - `module.app_bucket` (the whole module)
    - `module.app_bucket.aws_s3_bucket_versioning.this` (one resource)
    - `module.a,module.b` (several; commas, **no spaces**)
-4. Wait for the **Approve** stage to say it is waiting. Click **Review**, open the link, and read the plan.
+3. Wait for the **Approve** stage to say it is waiting. Click **Review**, open the link, and read the plan.
    Look at the last line: `Plan: X to add, Y to change, Z to destroy.`
    - It is what you expect: click **Approve**.
    - It is not: click **Reject**, and find out why.
-5. **Apply** runs. When it is green, the change is done.
-6. Check: `cd infra && terraform plan` should say there is nothing left to change for what you targeted.
+4. **Apply** runs. When it is green, the change is done.
+5. Check: `cd infra && terraform plan` should say there is nothing left to change for what you targeted.
 
 ### What to type in TF_TARGETS
 It is the **address**, not the folder. Use the name from the `module "..."` line: `module.app_bucket`.
@@ -88,7 +88,7 @@ Not `./modules/s3-bucket` and not `infra/modules/...`.
 
 | What you see | What to do |
 |---|---|
-| `TF_TARGETS is empty...` in Plan | Release change again and set `TF_TARGETS`. |
+| Plan fails for another reason | Open the CodeBuild Plan log; empty `TF_TARGETS` is allowed (full plan). |
 | `Invalid target address` | Use letters, digits and `_ . [ ] " -` only, no spaces. |
 | Plan or Apply fails with `AccessDenied` | Open the CodeBuild log and find the denied action. Add it to the right role in `pipeline/iam.tf` (see below), then apply `pipeline/` from your laptop again. |
 | Approve fails: "variables could not be resolved" | The plan buildspec must export `CODEBUILD_BUILD_ID`, and the Plan action must have `namespace = "PlanNs"` (both are already set). |
@@ -114,11 +114,6 @@ Plan and apply both need the read actions, so that Terraform can refresh what it
 - The plan file can contain secrets. The artifact bucket deletes files after 30 days. Never paste a whole plan into a chat or a ticket.
 - Do not apply from a laptop while a pipeline run is going. The S3 lock file (`use_lockfile`) blocks two applies at once, but it will make one of them fail.
 - Targeted runs ignore everything else. A full `terraform plan` can still show other changes. That is normal.
-
-## To allow a full plan again (not recommended here)
-
-1. In `pipeline/buildspec-plan.yml`, remove the `if [ -z "$TF_TARGETS" ] ...` block, and run `terraform plan` without `TARGET_ARGS` when there are no targets (our own pipeline does this).
-2. Optional: add a `trigger` block to `aws_codepipeline.this` so that a push to `infra/**` starts a plan.
 
 ## Tested and not tested
 

@@ -127,8 +127,8 @@ resource "aws_codebuild_project" "apply" {
 }
 
 # ---------------- The pipeline: Source > Plan > Approve > Apply ----------------
-# There is no push trigger on purpose. A run is started by hand with "Release change", and TF_TARGETS
-# must be set, because the plan stage refuses to run without a target.
+# Starts automatically on push to source_branch. You can still use "Release change" by hand.
+# Push-triggered runs use TF_TARGETS default ("none" = full plan).
 
 resource "aws_codepipeline" "this" {
   name           = local.pipeline_name
@@ -147,6 +147,19 @@ resource "aws_codepipeline" "this" {
     description   = "Optional. Leave none/empty for a full plan. Or set targets, for example module.app_bucket"
   }
 
+  # Auto-start when code is pushed to the watched branch.
+  trigger {
+    provider_type = "CodeStarSourceConnection"
+    git_configuration {
+      source_action_name = "Source"
+      push {
+        branches {
+          includes = [local.source_branch]
+        }
+      }
+    }
+  }
+
   stage {
     name = "Source"
 
@@ -162,7 +175,7 @@ resource "aws_codepipeline" "this" {
         ConnectionArn        = aws_codestarconnections_connection.github.arn
         FullRepositoryId     = local.source_repo
         BranchName           = local.source_branch
-        DetectChanges        = "false"
+        DetectChanges        = "true"
         OutputArtifactFormat = "CODE_ZIP"
       }
     }
