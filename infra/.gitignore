@@ -1,0 +1,33 @@
+# Local Terraform directories
+.terraform/
+.terraform.lock.hcl
+
+# State and backup files (state lives in S3)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash and override files
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan files (can contain secrets)
+*.tfplan
+*tfplan*
+*.tfplan.json
+
+# CLI config / local vars
+.terraformrc
+terraform.rc
+*.tfvars
+*.tfvars.json
+!example.tfvars
+
+# OS / editor
+.DS_Store
+*.swp
+*~
