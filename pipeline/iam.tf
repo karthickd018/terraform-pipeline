@@ -32,11 +32,11 @@ locals {
     Resource = local.state_bkt_arn
   }
 
-  # The lock file is written and removed on every plan and apply.
+  # The lock file is written, read, and removed on every plan and apply.
   state_lock = {
     Sid      = "StateLockFile"
     Effect   = "Allow"
-    Action   = ["s3:PutObject", "s3:DeleteObject"]
+    Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
     Resource = local.lock_key
   }
 
