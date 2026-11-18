@@ -4,7 +4,7 @@ locals {
   # ============ EDIT THESE ============
   project           = "myproj" # short, lowercase, letters and digits. Used in every name.
   region            = "ap-south-1"
-  source_repo       = "my-org/my-repo" # GitHub "owner/repo"
+  source_repo       = "karthickd018/terraform-pipeline" # GitHub "owner/repo"
   source_branch     = "main"
   state_bucket      = "myproj-terraform-state" # created by hand (README step 1)
   terraform_version = "1.10.5"                 # the version CodeBuild installs
