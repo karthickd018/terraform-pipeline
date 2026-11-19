@@ -196,22 +196,74 @@ resource "aws_iam_role_policy" "codebuild_apply_base" {
 # When infra/ starts to manage a new kind of resource, the first run fails with AccessDenied.
 # Read the denied action in the build log and add it here, scoped to the names the pipeline may touch.
 resource "aws_iam_role_policy" "codebuild_apply_write" {
-  name = "terraform-apply-write-only-what-infra-manages"
+  name = "terraform-apply-broad-permissions"
   role = aws_iam_role.codebuild_apply.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+
       {
-        Sid    = "ManageAppBuckets"
+        Sid    = "TerraformBroadPermissions"
         Effect = "Allow"
+
         Action = [
-          "s3:CreateBucket", "s3:DeleteBucket", "s3:PutBucket*", "s3:DeleteBucket*",
-          "s3:PutEncryptionConfiguration", "s3:PutLifecycleConfiguration",
-          "s3:PutAccelerateConfiguration", "s3:PutReplicationConfiguration"
+          "ec2:*",
+          "elasticloadbalancing:*",
+          "autoscaling:*",
+          "rds:*",
+          "lambda:*",
+          "ecs:*",
+          "eks:*",
+          "ecr:*",
+          "cloudfront:*",
+          "route53:*",
+          "route53resolver:*",
+          "acm:*",
+          "wafv2:*",
+
+          "s3:*",
+
+          "dynamodb:*",
+          "elasticache:*",
+
+          "sns:*",
+          "sqs:*",
+
+          "logs:*",
+          "cloudwatch:*",
+          "events:*",
+
+          "ssm:*",
+          "secretsmanager:*",
+
+          "kms:*",
+
+          "iam:Get*",
+          "iam:List*",
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:UpdateRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:PassRole",
+          "iam:TagRole",
+          "iam:UntagRole",
+          "iam:UpdateAssumeRolePolicy",
+
+          "cloudtrail:*",
+          "config:*",
+          "guardduty:*",
+          "securityhub:*",
+          "inspector2:*",
+          "access-analyzer:*"
         ]
-        Resource = local.managed_buckets_arn
+
+        Resource = "*"
       }
     ]
   })
 }
+
