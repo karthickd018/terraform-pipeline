@@ -258,7 +258,7 @@ resource "aws_iam_role_policy" "codebuild_apply_write" {
           "guardduty:*",
           "securityhub:*",
           "inspector2:*",
-          "access-analyzer:*"
+          
         ]
 
         Resource = "*"
